@@ -58,7 +58,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\StackOverflowNotifier\StackOverflowNotifier\Newtonsoft.Json.dll</HintPath>
+      <HintPath>.\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Prowlin">
       <HintPath>..\StreamNotifier\Prowlin.dll</HintPath>
