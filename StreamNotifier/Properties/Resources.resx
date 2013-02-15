@@ -197,7 +197,8 @@
     <value>Parse error</value>
   </data>
   <data name="SupportedStreamsTT" xml:space="preserve">
-    <value>http://www.justin.tv/identifier http://twitch.tv/identifier  http://www.own3d.tv/live/identifier/name http://regame.tv/live/identifier</value>
+    <value>http://www.justin.tv/[identifier]
+http://twitch.tv/[identifier]</value>
   </data>
   <data name="MainHandler_ClipboardMenuItemClick_No_text_found_in_clipboard_">
     <value xml:space="preserve">No text found in clipboard!</value>

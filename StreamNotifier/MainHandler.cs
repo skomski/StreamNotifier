@@ -66,7 +66,7 @@ namespace StreamNotifier
 
             if (Settings.Default.Streams == null)
             {
-                Settings.Default.Streams = new List<LiveStream>{new LiveStream("TakeTV","3635",LiveStream.StreamVendor.Own3dTV)};
+                Settings.Default.Streams = new List<LiveStream>{new LiveStream("GomTV","gomtv",LiveStream.StreamVendor.JustinTV)};
             }
 
             _backgroundWorker.RunWorker();

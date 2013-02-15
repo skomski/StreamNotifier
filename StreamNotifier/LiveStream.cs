@@ -6,8 +6,7 @@ using System.Xml.Serialization;
 using Helper.Extensions;
 using StreamNotifier.Properties;
 
-using RegameStream = response;
-using Own3dStream = own3dReply;
+
 using JustinStream = streams;
 
 namespace StreamNotifier
@@ -58,9 +57,7 @@ namespace StreamNotifier
 
         public enum StreamVendor
         {
-            JustinTV = 0,
-            Own3dTV = 1,
-            RegameTV = 2
+            JustinTV = 0
         }
 
         public LiveStream(string name,string identifier,StreamVendor vendor)
@@ -78,8 +75,6 @@ namespace StreamNotifier
 
             const string justinTVPattern = @"http://(.+)?justin\.tv/(?<id>.*)#?(.+)?";
             const string twitchTVPattern = @"http://(.+)?twitch\.tv/(?<id>.*)#?(.+)?";
-            const string own3dTVPattern = @"http://(.+)?own3d.tv/live/(?<id>.*)/(?<name>.*)";
-            const string regameTVPattern = @"http://(.+)?regame.tv/live/(?<id>.*)";
 
             if (Regex.IsMatch(completeURL, justinTVPattern, RegexOptions.Singleline))
             {
@@ -91,20 +86,6 @@ namespace StreamNotifier
             {
                 Vendor = StreamVendor.JustinTV;
                 Identifier = Regex.Match(completeURL, twitchTVPattern, RegexOptions.Singleline).Groups["id"].Value;
-                Name = Identifier;
-            }
-            else if (Regex.IsMatch(completeURL, own3dTVPattern, RegexOptions.Singleline))
-            {
-                Vendor = StreamVendor.Own3dTV;
-                var match = Regex.Match(completeURL, own3dTVPattern, RegexOptions.Singleline);
-
-                Identifier = match.Groups["id"].Value;
-                Name = match.Groups["name"].Value;
-            }
-            else if (Regex.IsMatch(completeURL, regameTVPattern, RegexOptions.Singleline))
-            {
-                Vendor = StreamVendor.RegameTV;
-                Identifier = Regex.Match(completeURL, regameTVPattern, RegexOptions.Singleline).Groups["id"].Value;
                 Name = Identifier;
             }
             else
@@ -125,26 +106,6 @@ namespace StreamNotifier
                             Viewer = Convert.ToInt32(justinStream.stream.channel_count);
                             URL = new Uri(Resources.justinTVURL + Identifier);
                         
-                    }
-                    break;
-                case StreamVendor.Own3dTV:
-                    {
-                        var own3DStream = FetchStreamData<Own3dStream>(Resources.own3dTVAPIURL + Identifier);
-                        if (own3DStream == null) return;
-
-                        EventDescription = "Live Event!";
-                        Viewer = own3DStream.liveEvent.isLive ? own3DStream.liveEvent.liveViewers : 0;
-                        URL = new Uri(Resources.own3dTVURL + Identifier);
-                    }
-                    break;
-                case StreamVendor.RegameTV:
-                    {
-                        var regameStream = FetchStreamData<RegameStream>(Resources.regameTVAPIURL + Identifier);
-                        if (regameStream == null) return;
-
-                        EventDescription = regameStream.stream.streamdescription.IsEmpty() ? "No event specified!" : regameStream.stream.streamdescription.Trim();
-                        Viewer = regameStream.stream.online ? regameStream.stream.viewer : 0;
-                        URL = new Uri(regameStream.stream.streamlink);
                     }
                     break;
                 default:
