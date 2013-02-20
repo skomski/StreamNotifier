@@ -36,7 +36,7 @@ namespace StreamNotifier
           Settings.Default.twitchName = twitchNameTextBox.Text;
           try {
             var client = new WebClient();
-            string response = client.DownloadString(new Uri(String.Format("https://api.twitch.tv/kraken/users/{0}/follows/channels?limit=100", Settings.Default.twitchName)));
+            string response = client.DownloadString(new Uri(String.Format("https://api.twitch.tv/kraken/users/{0}/follows/channels?limit=1", Settings.Default.twitchName)));
           }
           catch (WebException) {
             MessageBox.Show("Error", "Unknown TwitchTV name");

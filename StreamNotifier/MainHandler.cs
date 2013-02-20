@@ -65,8 +65,10 @@ namespace StreamNotifier {
       _updateTimer.Start();
 
       _backgroundWorker.DoWork += (s, a) => {
+        _trayIcon.Icon = Resources.sync_icon;
         PopulateChannels();
         _channels.ForEach(stream => stream.Update());
+        _trayIcon.Icon = Resources.tray_icon_icon;
       };
 
     _backgroundWorker.RunWorkerCompleted += (s, a) => UpdateStreamsUI();
@@ -99,7 +101,7 @@ namespace StreamNotifier {
 
       var jsonRoot = JsonConvert.DeserializeObject<JsonRootObject>(response);
 
-      foreach (JsonRootObject.Follow follow in jsonRoot.follows) {
+      foreach (var follow in jsonRoot.follows.Where(follow => !_channels.Exists(t => t.Name == follow.channel.name))) {
         _channels.Add(new TwitchTVStream(follow.channel.name));
       }
     }
@@ -117,14 +119,14 @@ namespace StreamNotifier {
     private void UpdateStreamsUI() {
       var newStreamMessage = new StringBuilder();
 
-      foreach (LiveStream stream in _channels) {
+      foreach (var stream in _channels) {
         if (stream.IsLive && stream.IsShowed == false) {
           var streamMenuItem = new ToolStripButton(stream.Name) {
             Name = stream.Identifier,
             Image = Resources.online,
             ToolTipText = stream.EventDescription
           };
-          string streamUrl = stream.Url.AbsoluteUri;
+          var streamUrl = stream.Url.AbsoluteUri;
           streamMenuItem.Click += (s, a) => Process.Start(streamUrl);
           _trayIcon.ContextMenuStrip.Items.Insert(0, streamMenuItem);
 
@@ -139,7 +141,7 @@ namespace StreamNotifier {
       }
 
       for (int index = 0; index < _trayIcon.ContextMenuStrip.Items.Count; index++) {
-        ToolStripItem item = _trayIcon.ContextMenuStrip.Items[index];
+        var item = _trayIcon.ContextMenuStrip.Items[index];
         if (_channels.Exists(stream => stream.Identifier == item.Name) == false &&
             item.Tag == null) {
           _trayIcon.ContextMenuStrip.Items.Remove(item);

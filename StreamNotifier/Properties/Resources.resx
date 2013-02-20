@@ -200,13 +200,16 @@
     <value>http://www.justin.tv/[identifier]
 http://twitch.tv/[identifier]</value>
   </data>
-  <data name="MainHandler_ClipboardMenuItemClick_No_text_found_in_clipboard_">
-    <value xml:space="preserve">No text found in clipboard!</value>
+  <data name="MainHandler_ClipboardMenuItemClick_No_text_found_in_clipboard_" xml:space="preserve">
+    <value>No text found in clipboard!</value>
   </data>
-  <data name="MainHandler_ClipboardMenuItemClick_No_URL_found_in_clipboard_">
-    <value xml:space="preserve">No URL found in clipboard!</value>
+  <data name="MainHandler_ClipboardMenuItemClick_No_URL_found_in_clipboard_" xml:space="preserve">
+    <value>No URL found in clipboard!</value>
   </data>
-  <data name="MainHandler_UpdateStreamsUI__streams_online_">
-    <value xml:space="preserve"> streams online!</value>
+  <data name="MainHandler_UpdateStreamsUI__streams_online_" xml:space="preserve">
+    <value> streams online!</value>
+  </data>
+  <data name="sync_icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\sync.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>
