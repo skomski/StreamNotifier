@@ -130,8 +130,8 @@ namespace StreamNotifier
                 if (stream.IsLive && stream.IsShowed == false)
                 {
                     var streamMenuItem = new ToolStripButton(stream.Name) {Name = stream.Identifier, Image = Resources.online,ToolTipText = stream.EventDescription};
-                    var streamURL = stream.URL.AbsoluteUri;
-                    streamMenuItem.Click += (s, a) => Process.Start(streamURL);
+                    var streamUrl = stream.URL.AbsoluteUri;
+                    streamMenuItem.Click += (s, a) => Process.Start(streamUrl);
                     _trayIcon.ContextMenuStrip.Items.Insert(0, streamMenuItem);
 
                     stream.IsShowed = true;
@@ -162,8 +162,7 @@ namespace StreamNotifier
 
             _trayIcon.Text = Settings.Default.Streams.Count(stream => stream.IsLive) + Resources.MainHandler_UpdateStreamsUI__streams_online_;
 
-            if(newStreamMessage.Length > 0)
-            {
+            if (newStreamMessage.Length > 0) {
                 new SoundPlayer(Resources.ringin).Play();
                 _trayIcon.ShowBalloonTip(5000,"New stream(s) online!",newStreamMessage.ToString(),ToolTipIcon.Info);
             }

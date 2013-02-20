@@ -100,7 +100,7 @@ namespace StreamNotifier
                 case StreamVendor.JustinTV:
                     {
                         var justinStream = FetchStreamData<JustinStream>(Resources.justinTVAPIURL + Identifier);
-                        if (justinStream == null) return;
+                        if (justinStream.stream == null) return;
 
                             EventDescription = justinStream.stream.title.IsEmpty() ? "No event specified!" : justinStream.stream.title.Trim();
                             Viewer = Convert.ToInt32(justinStream.stream.channel_count);
