@@ -98,7 +98,7 @@ namespace StreamNotifier
                     public string status { get; set; }
                     public string created_at { get; set; }
                     public string updated_at { get; set; }
-                    public bool mature { get; set; }
+                    public bool? mature { get; set; }
                     public int _id { get; set; }
                     public string background { get; set; }
                     public string banner { get; set; }
@@ -135,7 +135,7 @@ namespace StreamNotifier
 
           EventDescription = stream.channel.status;
           Viewer = stream.viewers;
-          Url = new Uri(stream.channel._links.self);
+          Url = new Uri(stream.channel.url);
         }
     }
 }
