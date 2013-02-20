@@ -8,8 +8,8 @@
     <Setting Name="ProwlAPIKey" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="Streams" Type="System.Collections.Generic.List&lt;LiveStream&gt;" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="twitchName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">skomski</Value>
     </Setting>
   </Settings>
 </SettingsFile>

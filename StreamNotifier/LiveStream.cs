@@ -1,29 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Serialization;
 using Helper.Extensions;
+using Newtonsoft.Json.Linq;
 using StreamNotifier.Properties;
-
-
-using JustinStream = streams;
 
 namespace StreamNotifier
 {
     [Serializable]
-    public class LiveStream
+    public abstract class LiveStream
     {
         public string Name { get; set; }
         public string Identifier { get; set; }
-        public StreamVendor Vendor { get; set; }
 
          [NonSerialized]
         private string _eventDescription;
         public string EventDescription
         {
             get { return _eventDescription; }
-            private set { _eventDescription = value; }
+            protected set { _eventDescription = value; }
         }
 
          [NonSerialized]
@@ -31,15 +30,15 @@ namespace StreamNotifier
         public int Viewer
         {
             get { return _viewer; }
-            private set { _viewer = value; }
+            protected set { _viewer = value; }
         }
 
          [NonSerialized]
         private Uri _url;
-        public Uri URL
+        public Uri Url
         {
             get { return _url; }
-            private set { _url = value; }
+            protected set { _url = value; }
         }
 
         public bool IsLive
@@ -55,80 +54,88 @@ namespace StreamNotifier
             set { _isShowed = value; }
         }
 
-        public enum StreamVendor
-        {
-            JustinTV = 0
+        protected LiveStream(string name, string identifier) {
+          Contract.Requires(name.NotEmpty());
+          Contract.Requires(identifier.NotEmpty());
+
+          Name = name;
+          Identifier = identifier;
         }
 
-        public LiveStream(string name,string identifier,StreamVendor vendor)
-        {
-            Contract.Requires(name.NotEmpty());
-            Contract.Requires(identifier.NotEmpty());
-
-            Name = name;
-            Identifier = identifier;
-            Vendor = vendor;
-        }
-        public LiveStream(string completeURL)
-        {
-            Contract.Requires(completeURL.IsUri());
-
-            const string justinTVPattern = @"http://(.+)?justin\.tv/(?<id>.*)#?(.+)?";
-            const string twitchTVPattern = @"http://(.+)?twitch\.tv/(?<id>.*)#?(.+)?";
-
-            if (Regex.IsMatch(completeURL, justinTVPattern, RegexOptions.Singleline))
-            {
-                Vendor = StreamVendor.JustinTV;
-                Identifier = Regex.Match(completeURL, justinTVPattern, RegexOptions.Singleline).Groups["id"].Value;
-                Name = Identifier;
-            }
-            else if (Regex.IsMatch(completeURL, twitchTVPattern, RegexOptions.Singleline))
-            {
-                Vendor = StreamVendor.JustinTV;
-                Identifier = Regex.Match(completeURL, twitchTVPattern, RegexOptions.Singleline).Groups["id"].Value;
-                Name = Identifier;
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException("completeURL");
-            }
-        }
-        public void Update()
-        {
-            switch (Vendor)
-            {
-                case StreamVendor.JustinTV:
-                    {
-                        var justinStream = FetchStreamData<JustinStream>(Resources.justinTVAPIURL + Identifier);
-                        if (justinStream.stream == null) return;
-
-                            EventDescription = justinStream.stream.title.IsEmpty() ? "No event specified!" : justinStream.stream.title.Trim();
-                            Viewer = Convert.ToInt32(justinStream.stream.channel_count);
-                            URL = new Uri(Resources.justinTVURL + Identifier);
-                        
-                    }
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-        static T FetchStreamData<T>(string uri) where T : class 
-        {
-            Contract.Requires(uri.IsUri());
-
-            using (var xmlReader =  XmlReader.Create(uri, new XmlReaderSettings()))
-            {
-                var xmlSerializer = new XmlSerializer(typeof(T));
-                if (!xmlSerializer.CanDeserialize(xmlReader)) return null;
-                return (T) xmlSerializer.Deserialize(xmlReader);
-            }
-        }
+        public abstract void Update();
 
         [ContractInvariantMethod]
         private void ObjectInvariant()
         {
             Contract.Invariant(Name.NotEmpty());
             Contract.Invariant(Identifier.NotEmpty());
+        }
+    }
+
+    [Serializable]
+    public class TwitchTVStream : LiveStream {
+        private class JsonRootObject
+        {
+            internal class Stream
+            {
+                internal class Channel
+                {
+                    internal class Links
+                    {
+                        public string follows { get; set; }
+                        public string chat { get; set; }
+                        public string commercial { get; set; }
+                        public string subscriptions { get; set; }
+                        public string stream_key { get; set; }
+                        public string editors { get; set; }
+                        public string self { get; set; }
+                        public string features { get; set; }
+                        public string videos { get; set; }
+                    }
+                    public string display_name { get; set; }
+                    public string video_banner { get; set; }
+                    public List<object> teams { get; set; }
+                    public string status { get; set; }
+                    public string created_at { get; set; }
+                    public string updated_at { get; set; }
+                    public bool mature { get; set; }
+                    public int _id { get; set; }
+                    public string background { get; set; }
+                    public string banner { get; set; }
+                    public string name { get; set; }
+                    public string logo { get; set; }
+                    public string url { get; set; }
+                    public Links _links { get; set; }
+                    public string game { get; set; }
+                }
+                public string broadcaster { get; set; }
+                public string preview { get; set; }
+                public long _id { get; set; }
+                public int viewers { get; set; }
+                public Channel channel { get; set; }
+                public string name { get; set; }
+                public string game { get; set; }
+            }
+            public Stream stream { get; set; }
+        }
+
+        public TwitchTVStream(string identifier) : base(identifier, identifier) {
+          Contract.Requires(identifier.NotEmpty());
+        }
+
+        public override void Update() {
+          var client = new WebClient();
+          var response = client.DownloadString(new Uri("https://api.twitch.tv/kraken/streams/" + Identifier));
+          var jsonRoot = Newtonsoft.Json.JsonConvert.DeserializeObject<JsonRootObject>(response);
+
+          // Stream is offline if
+          if (jsonRoot.stream == null) return;
+
+          var stream = jsonRoot.stream;
+
+          EventDescription = stream.channel.status;
+          Viewer = stream.viewers;
+          Url = new Uri(stream.channel._links.self);
         }
     }
 }
