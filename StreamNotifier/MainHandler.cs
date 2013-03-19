@@ -11,15 +11,17 @@ using System.Windows.Forms;
 using Helper.Extensions;
 using NLog;
 using Newtonsoft.Json;
-using Prowlin;
 using StreamNotifier.Properties;
 
 namespace StreamNotifier {
   internal class MainHandler {
+    private const string ClientId = "n2cq188sa6pgyzyrljef3jq5oqyqp88";
+    private const string RedirectUri = "http://google.com";
     private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
     private static bool _running;
     private readonly BackgroundWorker _backgroundWorker = new BackgroundWorker();
     private readonly List<LiveStream> _channels = new List<LiveStream>();
+
 
     private readonly NotifyIcon _trayIcon = new NotifyIcon {
       Icon = Resources.tray_icon_icon,
@@ -66,12 +68,32 @@ namespace StreamNotifier {
 
       _backgroundWorker.DoWork += (s, a) => {
         _trayIcon.Icon = Resources.sync_icon;
-        PopulateChannels();
-        _channels.ForEach(stream => stream.Update());
-        _trayIcon.Icon = Resources.tray_icon_icon;
+        try {
+          PopulateChannels();
+        }
+        catch (WebException e) {
+          var res = (HttpWebResponse) e.Response;
+          if (res.StatusCode == HttpStatusCode.Unauthorized) {
+            a.Result = false;
+            return;
+          }
+          MessageBox.Show("Cannot retrieve twitch followers", "Error");
+          a.Result = true;
+        }
+        a.Result = true;
       };
 
-    _backgroundWorker.RunWorkerCompleted += (s, a) => UpdateStreamsUI();
+      _backgroundWorker.RunWorkerCompleted += (s, a) => {
+        _trayIcon.Icon = Resources.tray_icon_icon;
+        var result = (bool) a.Result;
+        if (result == false) {
+          Authenticate();
+          _backgroundWorker.RunWorker();
+        }
+        else {
+          UpdateStreamsUI();
+        }
+      };
 
       _backgroundWorker.RunWorker();
     }
@@ -89,20 +111,17 @@ namespace StreamNotifier {
       var client = new WebClient();
       string response;
 
-      try {
-        response = client.DownloadString(
-          new Uri(String.Format("https://api.twitch.tv/kraken/users/{0}/follows/channels?limit=100",
-                        Settings.Default.twitchName)));
-      }
-      catch (WebException e) {
-        MessageBox.Show("Cannot retrieve twitch followers for name: " + Settings.Default.twitchName, "Error");
-        return;
-      }
+
+      response = client.DownloadString(
+        new Uri(String.Format("https://api.twitch.tv/kraken/streams/followed?limit=100&oauth_token={0}",
+                              Settings.Default.TwitchTVAccessToken)));
+
 
       var jsonRoot = JsonConvert.DeserializeObject<JsonRootObject>(response);
 
-      foreach (var follow in jsonRoot.follows.Where(follow => !_channels.Exists(t => t.Name == follow.channel.name))) {
-        _channels.Add(new TwitchTVStream(follow.channel.name));
+      _channels.Clear();
+      foreach (Stream follow in jsonRoot.streams) {
+        _channels.Add(new TwitchTVStream(follow.channel.name, follow.viewers, follow.channel.status, follow.channel.url));
       }
     }
 
@@ -119,29 +138,26 @@ namespace StreamNotifier {
     private void UpdateStreamsUI() {
       var newStreamMessage = new StringBuilder();
 
-      foreach (var stream in _channels) {
-        if (stream.IsLive && stream.IsShowed == false) {
+      foreach (LiveStream stream in _channels) {
+        if (stream.IsLive && !_trayIcon.ContextMenuStrip.Items.ContainsKey(stream.Identifier)) {
           var streamMenuItem = new ToolStripButton(stream.Name) {
             Name = stream.Identifier,
             Image = Resources.online,
             ToolTipText = stream.EventDescription
           };
-          var streamUrl = stream.Url.AbsoluteUri;
+          string streamUrl = stream.Url.AbsoluteUri;
           streamMenuItem.Click += (s, a) => Process.Start(streamUrl);
           _trayIcon.ContextMenuStrip.Items.Insert(0, streamMenuItem);
 
-          stream.IsShowed = true;
-
           newStreamMessage.AppendLine(stream.Name + " - " + stream.EventDescription + " - " + stream.Viewer);
         }
-        else if (stream.IsLive == false && stream.IsShowed) {
-          stream.IsShowed = false;
+        else if (stream.IsLive == false && _trayIcon.ContextMenuStrip.Items.ContainsKey(stream.Identifier)) {
           _trayIcon.ContextMenuStrip.Items.RemoveByKey(stream.Identifier);
         }
       }
 
       for (int index = 0; index < _trayIcon.ContextMenuStrip.Items.Count; index++) {
-        var item = _trayIcon.ContextMenuStrip.Items[index];
+        ToolStripItem item = _trayIcon.ContextMenuStrip.Items[index];
         if (_channels.Exists(stream => stream.Identifier == item.Name) == false &&
             item.Tag == null) {
           _trayIcon.ContextMenuStrip.Items.Remove(item);
@@ -162,16 +178,48 @@ namespace StreamNotifier {
       Contract.Invariant(_backgroundWorker != null);
     }
 
-    public class JsonRootObject {
-      public List<Follow> follows { get; set; }
-
-      public class Follow {
-        public Channel channel { get; set; }
-
-        public class Channel {
-          public string name { get; set; }
-        }
+    internal static void Authenticate() {
+      var authDialog = new OAuthForm(
+        String.Format(
+          "https://api.twitch.tv/kraken/oauth2/authorize?response_type=token&client_id={0}&redirect_uri={1}", ClientId,
+          RedirectUri));
+      if (authDialog.ShowDialog() == DialogResult.OK) {
+        Settings.Default.TwitchTVAccessToken = authDialog.AccessToken;
+        Settings.Default.Save();
       }
+      else {
+        MessageBox.Show("Could not authenticate your twitch account", "Error");
+      }
+    }
+
+    public class Channel {
+      public string display_name { get; set; }
+      public List<object> teams { get; set; }
+      public string status { get; set; }
+      public string created_at { get; set; }
+      public string updated_at { get; set; }
+      public bool? mature { get; set; }
+      public int _id { get; set; }
+      public string background { get; set; }
+      public string banner { get; set; }
+      public string logo { get; set; }
+      public string name { get; set; }
+      public string url { get; set; }
+      public string video_banner { get; set; }
+      public string game { get; set; }
+    }
+
+    public class JsonRootObject {
+      public List<Stream> streams { get; set; }
+    }
+
+    public class Stream {
+      public string broadcaster { get; set; }
+      public object _id { get; set; }
+      public int viewers { get; set; }
+      public Channel channel { get; set; }
+      public string name { get; set; }
+      public string game { get; set; }
     }
   }
 }

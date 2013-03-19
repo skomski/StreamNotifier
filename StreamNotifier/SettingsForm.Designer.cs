@@ -31,8 +31,7 @@
       this.UpdateIntervalUpDown = new System.Windows.Forms.NumericUpDown();
       this.AutoStartCheckBox = new System.Windows.Forms.CheckBox();
       this.updateIntervalLabel = new System.Windows.Forms.Label();
-      this.twitchNameLabel = new System.Windows.Forms.Label();
-      this.twitchNameTextBox = new System.Windows.Forms.TextBox();
+      this.reauthButton = new System.Windows.Forms.Button();
       ((System.ComponentModel.ISupportInitialize)(this.UpdateIntervalUpDown)).BeginInit();
       this.SuspendLayout();
       // 
@@ -57,7 +56,7 @@
       // AutoStartCheckBox
       // 
       this.AutoStartCheckBox.AutoSize = true;
-      this.AutoStartCheckBox.Location = new System.Drawing.Point(98, 67);
+      this.AutoStartCheckBox.Location = new System.Drawing.Point(155, 39);
       this.AutoStartCheckBox.Name = "AutoStartCheckBox";
       this.AutoStartCheckBox.Size = new System.Drawing.Size(117, 17);
       this.AutoStartCheckBox.TabIndex = 4;
@@ -74,29 +73,22 @@
       this.updateIntervalLabel.TabIndex = 6;
       this.updateIntervalLabel.Text = "Update Interval";
       // 
-      // twitchNameLabel
+      // reauthButton
       // 
-      this.twitchNameLabel.AutoSize = true;
-      this.twitchNameLabel.Location = new System.Drawing.Point(12, 38);
-      this.twitchNameLabel.Name = "twitchNameLabel";
-      this.twitchNameLabel.Size = new System.Drawing.Size(70, 13);
-      this.twitchNameLabel.TabIndex = 7;
-      this.twitchNameLabel.Text = "Twitch Name";
-      // 
-      // twitchNameTextBox
-      // 
-      this.twitchNameTextBox.Location = new System.Drawing.Point(98, 38);
-      this.twitchNameTextBox.Name = "twitchNameTextBox";
-      this.twitchNameTextBox.Size = new System.Drawing.Size(174, 20);
-      this.twitchNameTextBox.TabIndex = 8;
+      this.reauthButton.Location = new System.Drawing.Point(12, 33);
+      this.reauthButton.Name = "reauthButton";
+      this.reauthButton.Size = new System.Drawing.Size(133, 26);
+      this.reauthButton.TabIndex = 7;
+      this.reauthButton.Text = "Reauthenticate";
+      this.reauthButton.UseVisualStyleBackColor = true;
+      this.reauthButton.Click += new System.EventHandler(this.reauthButton_Click);
       // 
       // SettingsForm
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-      this.ClientSize = new System.Drawing.Size(284, 89);
-      this.Controls.Add(this.twitchNameTextBox);
-      this.Controls.Add(this.twitchNameLabel);
+      this.ClientSize = new System.Drawing.Size(284, 68);
+      this.Controls.Add(this.reauthButton);
       this.Controls.Add(this.updateIntervalLabel);
       this.Controls.Add(this.AutoStartCheckBox);
       this.Controls.Add(this.UpdateIntervalUpDown);
@@ -122,8 +114,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn identifierColumn;
         private System.Windows.Forms.DataGridViewComboBoxColumn vendorColumn;
         private System.Windows.Forms.Label updateIntervalLabel;
-        private System.Windows.Forms.Label twitchNameLabel;
-        private System.Windows.Forms.TextBox twitchNameTextBox;
+        private System.Windows.Forms.Button reauthButton;
     }
 }
 

@@ -49,13 +49,13 @@ namespace StreamNotifier.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("skomski")]
-        public string twitchName {
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string TwitchTVAccessToken {
             get {
-                return ((string)(this["twitchName"]));
+                return ((string)(this["TwitchTVAccessToken"]));
             }
             set {
-                this["twitchName"] = value;
+                this["TwitchTVAccessToken"] = value;
             }
         }
     }
