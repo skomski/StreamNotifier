@@ -7,6 +7,7 @@ using System.Linq;
 using System.Media;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Helper.Extensions;
 using NLog;
@@ -117,7 +118,7 @@ namespace StreamNotifier {
                               Settings.Default.TwitchTVAccessToken)));
 
 
-      var jsonRoot = JsonConvert.DeserializeObject<JsonRootObject>(response);
+      var jsonRoot = JsonConvert.DeserializeObject<JsonStreamsRootObject>(response);
 
       _channels.Clear();
       foreach (Stream follow in jsonRoot.streams) {
@@ -145,8 +146,8 @@ namespace StreamNotifier {
             Image = Resources.online,
             ToolTipText = stream.EventDescription
           };
-          string streamUrl = stream.Url.AbsoluteUri;
-          streamMenuItem.Click += (s, a) => Process.Start(streamUrl);
+          string streamName = stream.Name;
+          streamMenuItem.Click += (s, a) => ViewStream(streamName);
           _trayIcon.ContextMenuStrip.Items.Insert(0, streamMenuItem);
 
           newStreamMessage.AppendLine(stream.Name + " - " + stream.EventDescription + " - " + stream.Viewer);
@@ -172,6 +173,66 @@ namespace StreamNotifier {
       }
     }
 
+    public static string EscapeArguments(params string[] args)
+    {
+      StringBuilder arguments = new StringBuilder();
+      Regex invalidChar = new Regex("[\x00\x0a\x0d]");//  these can not be escaped
+      Regex needsQuotes = new Regex(@"\s|""");//          contains whitespace or two quote characters
+      Regex escapeQuote = new Regex(@"(\\*)(""|$)");//    one or more '\' followed with a quote or end of string
+      for (int carg = 0; args != null && carg < args.Length; carg++)
+      {
+        if (args[carg] == null) { throw new ArgumentNullException("args[" + carg + "]"); }
+        if (invalidChar.IsMatch(args[carg])) { throw new ArgumentOutOfRangeException("args[" + carg + "]"); }
+        if (args[carg] == String.Empty) { arguments.Append("\"\""); }
+        else if (!needsQuotes.IsMatch(args[carg])) { arguments.Append(args[carg]); }
+        else
+        {
+          arguments.Append('"');
+          arguments.Append(escapeQuote.Replace(args[carg], m =>
+          m.Groups[1].Value + m.Groups[1].Value +
+          (m.Groups[2].Value == "\"" ? "\\\"" : "")
+          ));
+          arguments.Append('"');
+        }
+        if (carg + 1 < args.Length)
+          arguments.Append(' ');
+      }
+      return arguments.ToString();
+    }
+
+    private void ViewStream(string name) {
+      var client = new WebClient();
+      string response;
+
+
+      response = client.DownloadString(
+        new Uri(String.Format("http://usher.twitch.tv/find/{0}.json?type=any&p=0",
+                              name.ToLower())));
+
+
+      var jsonRoot = JsonConvert.DeserializeObject<StreamSource[]>(response);
+
+      var sources = jsonRoot.Where(t => t.type == "live").ToArray();
+
+      string swfVfy =
+        String.Format(
+          "http://www-cdn.jtvnw.net/widgets/live_embed_player.r063553554ff850316ad413fafd5d0783c46f587b.swf?channel={0}&referer=&userAgent=&channel={0}",
+          name.ToLower());
+      var commandLine =
+        String.Format(
+          "/c C:\\rtmpdump.exe -r \"{0}/{1}\" --swfVfy \"{2}\" -j {3} -v -o - | \"C:\\Program Files (x86)\\VideoLAN\\VLC\\vlc.exe\" - --play-and-exit",
+          sources[0].connect, sources[0].play, swfVfy, EscapeArguments(sources[0].token)
+          );
+      var process = new Process();
+      var startInfo = new ProcessStartInfo {
+        WindowStyle = ProcessWindowStyle.Hidden,
+        FileName = "cmd.exe",
+        Arguments = commandLine
+      };
+      process.StartInfo = startInfo;
+      process.Start();
+    }
+
     [ContractInvariantMethod]
     private void ObjectInvariant() {
       Contract.Invariant(_updateTimer != null);
@@ -192,6 +253,28 @@ namespace StreamNotifier {
       }
     }
 
+    public class StreamSource {
+      public string node { get; set; }
+      public string needed_info { get; set; }
+      public string play { get; set; }
+      public string meta_game { get; set; }
+      public int video_height { get; set; }
+      public double bitrate { get; set; }
+      public int broadcast_part { get; set; }
+      public string persistent { get; set; }
+      public string cluster { get; set; }
+      public string token { get; set; }
+      public string connect { get; set; }
+      public object broadcast_id { get; set; }
+      public string type { get; set; }
+      public string display { get; set; }
+    }
+
+
+    public class StreamSources {
+      public List<StreamSource> sources { get; set; }
+    }
+
     public class Channel {
       public string display_name { get; set; }
       public List<object> teams { get; set; }
@@ -209,7 +292,7 @@ namespace StreamNotifier {
       public string game { get; set; }
     }
 
-    public class JsonRootObject {
+    public class JsonStreamsRootObject {
       public List<Stream> streams { get; set; }
     }
 
